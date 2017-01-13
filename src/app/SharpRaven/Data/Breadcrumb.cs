@@ -9,6 +9,7 @@ namespace SharpRaven.Data {
     /// <summary>
     /// Breadcrumb trail.
     /// </summary>
+    [Serializable]
     public class Breadcrumb {
         private readonly DateTime timestamp;
 

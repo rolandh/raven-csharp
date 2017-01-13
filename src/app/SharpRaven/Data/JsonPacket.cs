@@ -32,7 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-
+using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -44,6 +44,7 @@ namespace SharpRaven.Data
     /// <summary>
     /// Represents the JSON packet that is transmitted to Sentry.
     /// </summary>
+    [Serializable]
     public class JsonPacket
     {
         /// <summary>
@@ -395,6 +396,11 @@ namespace SharpRaven.Data
                     Exceptions.Add(sentryException);
                 }
             }
+        }
+
+        public override int GetHashCode()
+        {
+            return this.ToString().GetHashCode()*17;
         }
     }
 }

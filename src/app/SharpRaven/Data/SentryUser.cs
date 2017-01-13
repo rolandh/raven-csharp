@@ -28,6 +28,7 @@
 
 #endregion
 
+using System;
 using System.Security.Principal;
 
 using Newtonsoft.Json;
@@ -38,6 +39,7 @@ namespace SharpRaven.Data
     /// An interface which describes the authenticated User for a request.
     /// You should provide at least either an id (a unique identifier for an authenticated user) or ip_address (their IP address).
     /// </summary>
+    [Serializable]
     public class SentryUser
     {
         /// <summary>

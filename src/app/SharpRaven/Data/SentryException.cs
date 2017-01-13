@@ -38,6 +38,7 @@ namespace SharpRaven.Data
     /// <summary>
     /// Represents Sentry's version of an <see cref="Exception"/>.
     /// </summary>
+    [Serializable]
     public class SentryException
     {
         private readonly string message;

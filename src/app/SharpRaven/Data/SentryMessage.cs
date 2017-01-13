@@ -39,6 +39,7 @@ namespace SharpRaven.Data
     /// Captures a <see cref="string"/> message, optionally formatted with arguments,
     /// as sent to Sentry.
     /// </summary>
+    [Serializable]
     public class SentryMessage
     {
         private readonly string message;

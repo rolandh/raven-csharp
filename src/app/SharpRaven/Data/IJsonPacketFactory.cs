@@ -59,7 +59,8 @@ namespace SharpRaven.Data
                           ErrorLevel level = ErrorLevel.Info,
                           IDictionary<string, string> tags = null,
                           string[] fingerprint = null,
-                          object extra = null);
+                          object extra = null,
+                          string user = null);
 
 
         /// <summary>
@@ -84,7 +85,8 @@ namespace SharpRaven.Data
                           ErrorLevel level = ErrorLevel.Error,
                           IDictionary<string, string> tags = null,
                           string[] fingerprint = null,
-                          object extra = null);
+                          object extra = null,
+                          string user = null);
 
 
         /// <summary>

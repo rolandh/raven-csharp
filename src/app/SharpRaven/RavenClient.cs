@@ -52,6 +52,7 @@ namespace SharpRaven
         private readonly ISentryRequestFactory sentryRequestFactory;
         private readonly ISentryUserFactory sentryUserFactory;
 
+        private bool cachePacketsWhenOffline;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RavenClient" /> class. Sentry
@@ -75,8 +76,9 @@ namespace SharpRaven
         public RavenClient(string dsn,
                            IJsonPacketFactory jsonPacketFactory = null,
                            ISentryRequestFactory sentryRequestFactory = null,
-                           ISentryUserFactory sentryUserFactory = null)
-            : this(new Dsn(dsn), jsonPacketFactory, sentryRequestFactory, sentryUserFactory)
+                           ISentryUserFactory sentryUserFactory = null,
+                           bool cachePacketsWhenOffline = false)
+            : this(new Dsn(dsn), jsonPacketFactory, sentryRequestFactory, sentryUserFactory, cachePacketsWhenOffline)
         {
         }
 
@@ -92,11 +94,13 @@ namespace SharpRaven
         public RavenClient(Dsn dsn,
                            IJsonPacketFactory jsonPacketFactory = null,
                            ISentryRequestFactory sentryRequestFactory = null,
-                           ISentryUserFactory sentryUserFactory = null)
+                           ISentryUserFactory sentryUserFactory = null,
+                           bool cachePacketsWhenOffline = false)
         {
             if (dsn == null)
                 throw new ArgumentNullException("dsn");
 
+            this.cachePacketsWhenOffline = cachePacketsWhenOffline;
             this.currentDsn = dsn;
             this.jsonPacketFactory = jsonPacketFactory ?? new JsonPacketFactory();
             this.sentryRequestFactory = sentryRequestFactory ?? new SentryRequestFactory();
@@ -106,8 +110,34 @@ namespace SharpRaven
             Timeout = TimeSpan.FromSeconds(5);
             this.defaultTags = new Dictionary<string, string>();
             this.breadcrumbs = new CircularBuffer<Breadcrumb>();
+
+            if (cachePacketsWhenOffline) SendCache();
         }
 
+        private void SendCache()
+        {
+            //Attempt to send all cached json packets that failed to send last time
+            var files = Directory.GetFiles(System.Environment.CurrentDirectory, "*.json");
+            foreach (var file in files)
+            {
+                if(string.IsNullOrEmpty(file)) continue;
+                try
+                {
+                    var bytes = File.ReadAllBytes(file);
+                    if (bytes.Length <= 0) continue;
+                    var packet = bytes.DeserialiseBytes<JsonPacket>();
+                    Send(packet);
+                }
+                catch (Exception){}
+                try
+                {
+                    //Delete the file when done. If we failed again we will resend next time as Send() creates another cached file
+                    File.Delete(file);
+                }
+                catch (Exception) { }
+
+            }
+        }
 
         /// <summary>
         /// Gets or sets the <see cref="Action"/> to execute to manipulate or extract data from
@@ -363,6 +393,19 @@ namespace SharpRaven
             }
             catch (Exception exception)
             {
+                if (!cachePacketsWhenOffline) return HandleException(exception, requester);
+                try
+                {
+                    if (!string.IsNullOrEmpty(packet.Message)) packet.Message += "\n";
+                    packet.Message +=
+                        $"Attempted to send on {DateTime.UtcNow.ToShortDateString()} {DateTime.UtcNow.ToLongTimeString()} UTC however packet failed to send and was cached locally.";
+                    var bytes = packet.SerialiseBytes();
+                    var fileName =
+                        $"{DateTime.UtcNow.ToShortDateString().Replace("/", "-")} {DateTime.UtcNow.ToLongTimeString().Replace(":", "-")} - {GetHashCode()}.json";
+                    var path = Path.Combine(System.Environment.CurrentDirectory, fileName);
+                    if (bytes != null && bytes.Length > 0) File.WriteAllBytes(path, bytes);
+                }
+                catch (Exception){}
                 return HandleException(exception, requester);
             }
         }

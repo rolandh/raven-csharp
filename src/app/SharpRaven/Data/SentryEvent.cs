@@ -36,19 +36,22 @@ namespace SharpRaven.Data
     /// <summary>
     /// Represents an event being captured by <see cref="IRavenClient.Capture(SentryEvent)"/>.
     /// </summary>
+    [Serializable]
     public class SentryEvent
     {
         private readonly Exception exception;
         private IList<string> fingerprint;
         private SentryMessage message;
         private IDictionary<string, string> tags;
-
+        public string User;
 
         /// <summary>Initializes a new instance of the <see cref="SentryEvent" /> class.</summary>
         /// <param name="exception">The <see cref="Exception" /> to capture.</param>
-        public SentryEvent(Exception exception)
+        /// <param name="user"></param>
+        public SentryEvent(Exception exception, string user = null)
             : this()
         {
+            this.User = user;
             this.exception = exception;
             Level = ErrorLevel.Error;
         }
@@ -56,9 +59,11 @@ namespace SharpRaven.Data
 
         /// <summary>Initializes a new instance of the <see cref="SentryEvent"/> class.</summary>
         /// <param name="message">The message to capture.</param>
-        public SentryEvent(SentryMessage message)
+        /// <param name="user"></param>
+        public SentryEvent(SentryMessage message, string user = null)
             : this()
         {
+            this.User = user;
             Message = message;
         }
 

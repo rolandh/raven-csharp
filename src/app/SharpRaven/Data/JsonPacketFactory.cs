@@ -59,14 +59,16 @@ namespace SharpRaven.Data
                                  ErrorLevel level = ErrorLevel.Info,
                                  IDictionary<string, string> tags = null,
                                  string[] fingerprint = null,
-                                 object extra = null)
+                                 object extra = null,
+                                 string user = null)
         {
             var @event = new SentryEvent(message)
             {
                 Level = level,
                 Extra = extra,
                 Tags = tags,
-                Fingerprint = fingerprint
+                Fingerprint = fingerprint,
+                User = user
             };
 
             return Create(project, @event);
@@ -87,6 +89,7 @@ namespace SharpRaven.Data
         /// <param name="tags">The tags to annotate the captured <paramref name="exception" /> with.</param>
         /// <param name="fingerprint">The custom fingerprint to annotate the captured <paramref name="message" /> with.</param>
         /// <param name="extra">The extra metadata to send with the captured <paramref name="exception" />.</param>
+        /// <param name="user"></param>
         /// <returns>
         /// A new instance of
         /// <see cref="JsonPacket" /> for the specified
@@ -101,7 +104,8 @@ namespace SharpRaven.Data
                                  ErrorLevel level = ErrorLevel.Error,
                                  IDictionary<string, string> tags = null,
                                  string[] fingerprint = null,
-                                 object extra = null)
+                                 object extra = null,
+                                 string user = null)
         {
             var @event = new SentryEvent(exception)
             {
@@ -110,6 +114,7 @@ namespace SharpRaven.Data
                 Extra = extra,
                 Tags = tags,
                 Fingerprint = fingerprint,
+                User = user
             };
 
             return Create(project, @event);
@@ -130,8 +135,10 @@ namespace SharpRaven.Data
         {
             var json = new JsonPacket(project, @event)
             {
-                Breadcrumbs = @event.Breadcrumbs
+                Breadcrumbs = @event.Breadcrumbs,
             };
+
+            if(!string.IsNullOrEmpty(@event.User)) json.User = new SentryUser(@event.User);
 
             return OnCreate(json);
         }

@@ -66,6 +66,9 @@ namespace SharpRaven.Data
             if (ravenClient == null)
                 throw new ArgumentNullException("ravenClient");
 
+            if (ravenClient.CurrentDsn.SentryUri == null)
+                throw new InvalidOperationException("SentryUri was null");
+
             this.ravenClient = ravenClient;
             this.packet = ravenClient.PreparePacket(packet);
             this.data = new RequestData(this);
