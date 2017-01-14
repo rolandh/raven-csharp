@@ -90,6 +90,7 @@ namespace SharpRaven
         /// <param name="jsonPacketFactory">The optional factory that will be used to create the <see cref="JsonPacket" /> that will be sent to Sentry.</param>
         /// <param name="sentryRequestFactory">The optional factory that will be used to create the <see cref="SentryRequest"/> that will be sent to Sentry.</param>
         /// <param name="sentryUserFactory">The optional factory that will be used to create the <see cref="SentryUser"/> that will be sent to Sentry.</param>
+        /// <param name="cachePacketsWhenOffline"></param>
         /// <exception cref="System.ArgumentNullException">dsn</exception>
         public RavenClient(Dsn dsn,
                            IJsonPacketFactory jsonPacketFactory = null,
@@ -111,10 +112,10 @@ namespace SharpRaven
             this.defaultTags = new Dictionary<string, string>();
             this.breadcrumbs = new CircularBuffer<Breadcrumb>();
 
-            if (cachePacketsWhenOffline) SendCache();
+            if (cachePacketsWhenOffline) SendCachedFiles();
         }
 
-        private void SendCache()
+        private void SendCachedFiles()
         {
             //Attempt to send all cached json packets that failed to send last time
             var files = Directory.GetFiles(System.Environment.CurrentDirectory, "*.json");
@@ -396,13 +397,18 @@ namespace SharpRaven
                 if (!cachePacketsWhenOffline) return HandleException(exception, requester);
                 try
                 {
+                    var temp = "";
+                    if (currentDsn.Uri == null || string.IsNullOrEmpty(currentDsn.Uri.ToString())) temp = "SentryTemp";
+                    else temp = currentDsn.Uri.ToString();
+
                     if (!string.IsNullOrEmpty(packet.Message)) packet.Message += "\n";
                     packet.Message +=
                         $"Attempted to send on {DateTime.UtcNow.ToShortDateString()} {DateTime.UtcNow.ToLongTimeString()} UTC however packet failed to send and was cached locally.";
+                    packet.Extra = packet.Message;
                     var bytes = packet.SerialiseBytes();
                     var fileName =
-                        $"{DateTime.UtcNow.ToShortDateString().Replace("/", "-")} {DateTime.UtcNow.ToLongTimeString().Replace(":", "-")} - {GetHashCode()}.json";
-                    var path = Path.Combine(System.Environment.CurrentDirectory, fileName);
+                        $"{DateTime.UtcNow.ToShortDateString().Replace("/", "-")} {DateTime.UtcNow.ToLongTimeString().Replace(":", "-")} - {Guid.NewGuid().ToString("n")}.json";
+                    var path = Path.Combine(System.Environment.CurrentDirectory, temp, fileName);
                     if (bytes != null && bytes.Length > 0) File.WriteAllBytes(path, bytes);
                 }
                 catch (Exception){}

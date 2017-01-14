@@ -397,10 +397,5 @@ namespace SharpRaven.Data
                 }
             }
         }
-
-        public override int GetHashCode()
-        {
-            return this.ToString().GetHashCode()*17;
-        }
     }
 }
